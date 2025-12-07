@@ -9,8 +9,7 @@
             --depth-step: 1500px;
             --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
             --neon-accent: #00f3ff;
-            --glass-bg: rgba(10, 10, 10, 0.9);
-            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-bg: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,0) 100%);
             --text-color: #f0f0f0;
         }
 
@@ -30,18 +29,86 @@
             width: 100vw;
         }
 
-        .stars {
+        /* --- START SCREEN (Input) --- */
+        #start-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            background-image: 
-                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
-                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px);
-            background-size: 550px 550px, 350px 350px; 
-            opacity: 0.5;
-            z-index: -1;
+            background: #000;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: opacity 0.8s ease;
         }
 
+        #start-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: white;
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 320px;
+            gap: 15px;
+        }
+
+        input[type="text"] {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 15px;
+            color: white;
+            /* Font size 16px+ prevents iOS zoom */
+            font-size: 18px; 
+            border-radius: 8px;
+            outline: none;
+            text-align: center;
+        }
+        
+        input[type="text"]:focus {
+            border-color: var(--neon-accent);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .start-btn {
+            background: var(--neon-accent);
+            color: black;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .start-btn:active {
+            transform: scale(0.98);
+        }
+
+        .status-msg {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
+            height: 20px;
+            text-align: center;
+        }
+
+        /* --- 3D WORLD --- */
         #viewport {
             perspective: 1200px;
             height: 100%;
@@ -60,16 +127,11 @@
             transition: transform 1.5s var(--ease-out);
         }
 
-        /* --- HUD --- */
+        /* --- Minimal Back Button --- */
         #hud {
             position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: auto;
-            display: flex;
-            justify-content: center;
-            pointer-events: none;
+            top: 20px;
+            left: 20px;
             z-index: 1000;
             opacity: 0;
             transition: opacity 0.5s ease;
@@ -77,31 +139,29 @@
 
         #hud.visible {
             opacity: 1;
-            pointer-events: auto;
         }
 
         button.back-btn {
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            color: var(--neon-accent);
-            padding: 12px 32px;
-            border-radius: 30px;
-            font-size: 13px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            font-weight: 600;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 44px; /* Mobile touch target min */
+            height: 44px;
+            border-radius: 50%;
+            font-size: 20px;
+            line-height: 1;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button.back-btn::before {
+            content: "←";
         }
 
-        button.back-btn:active {
-            transform: scale(0.95);
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        /* --- Nodes & Cards --- */
+        /* --- FULL SCREEN NODES --- */
         .node {
             position: absolute;
             top: 50%;
@@ -111,277 +171,280 @@
             align-items: center;
             justify-content: center;
             transition: opacity 0.8s ease;
-            width: 0; 
-            height: 0;
+            width: 0; height: 0;
         }
 
         .card {
-            width: 320px;
-            height: 520px; /* Slightly taller to fit buttons */
+            width: 100vw;
+            height: 100vh;
             position: absolute;
-            top: -260px; 
-            left: -160px; 
-            
-            background: linear-gradient(135deg, #111 0%, #222 100%);
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+            top: -50vh;
+            left: -50vw;
+            background: #000;
+            border-radius: 0; 
             overflow: hidden;
-            border: 1px solid #333;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            cursor: default; /* Default cursor unless linear */
-            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.4s ease, box-shadow 0.4s ease, opacity 0.5s ease;
+            cursor: default;
+            box-shadow: 0 0 150px rgba(0,0,0,1); /* Depth shadow */
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
         }
 
-        .node.active.linear-interaction .card {
-            cursor: pointer;
-        }
-
-        .node.active.linear-interaction .card:active {
-            transform: scale(0.98);
-        }
-
+        .node.active.linear-interaction .card { cursor: pointer; }
+        
         .card-image {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background-size: cover;
             background-position: center;
             opacity: 0; 
-            transition: opacity 0.8s ease;
+            transition: opacity 1s ease;
             z-index: 1;
+            /* Gradient overlay to ensure text is readable */
+            box-shadow: inset 0 -30vh 20vh rgba(0,0,0,0.9);
         }
         
-        .card-image.loaded {
-            opacity: 1;
-        }
+        .card-image.loaded { opacity: 1; }
 
         .text-overlay {
             position: relative;
-            z-index: 3; /* Above image AND loader */
+            z-index: 3;
             width: 100%;
-            padding: 24px;
-            padding-bottom: 32px; 
+            /* Gradient for text readability */
             background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-top: 1px solid var(--glass-border);
+            /* Extra bottom padding for iPhone home bar */
+            padding: 20px 24px 50px 24px; 
+            text-align: center;
         }
 
         .card h2 {
             margin: 0 0 10px 0;
-            font-weight: 700;
-            font-size: 22px;
+            font-weight: 800;
+            font-size: 26px; /* Optimized for mobile readability */
             color: #fff;
-            letter-spacing: 0.5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
         }
 
         .card p {
-            margin: 0 0 16px 0;
-            font-size: 15px;
+            margin: 0 0 24px 0;
+            font-size: 16px;
             line-height: 1.5;
-            color: #ddd;
+            color: #eee;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         /* --- Choice Buttons --- */
         .choice-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
         }
 
         .choice-btn {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 16px; /* Nice tall hit target */
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
         }
 
         .choice-btn:active {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.96);
         }
         
-        /* Highlight specific choices just for flavor */
-        .choice-btn[data-type="nature"] { border-color: #74ee15; color: #baff99; }
-        .choice-btn[data-type="tech"] { border-color: #00f3ff; color: #ccfcff; }
-
-        /* --- Visibility Logic --- */
-        .node.active {
-            opacity: 1;
-            pointer-events: auto; 
-            z-index: 100;
-        }
-        
-        .node.active .card {
-            box-shadow: 0 0 80px rgba(0, 243, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.4);
+        .tap-hint {
+            font-size: 12px; 
+            opacity: 0.6; 
+            margin-top: 10px; 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+            animation: pulse 2s infinite;
         }
 
-        .node.past {
-            opacity: 0;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        /* FUTURE CARDS */
-        .node.future {
-            opacity: 0; 
-            pointer-events: none;
-            z-index: 50;
-            transition: opacity 1s ease 0.5s; 
-        }
-
-        /* --- LOADING UI --- */
+        /* --- Loading / Error --- */
         .loading-container {
             position: absolute;
-            top: 40%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             display: flex;
             flex-direction: column;
             align-items: center;
             z-index: 2; 
-            width: 100%;
         }
 
-        .loading-container.hidden {
-            display: none;
-        }
+        .loading-container.hidden { display: none; }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255,255,255,0.1);
+            width: 50px; height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
             border-top-color: var(--neon-accent);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-bottom: 12px;
-        }
-
-        .loading-text {
-            font-size: 10px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.5);
-            animation: pulse 1.5s ease-in-out infinite;
+            margin-bottom: 16px;
         }
         
-        /* RETRY BUTTON */
         .retry-btn {
             background: rgba(255, 50, 50, 0.2);
             border: 1px solid rgba(255, 50, 50, 0.5);
             color: #ff8888;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 11px;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 1px;
             cursor: pointer;
-            display: none; /* Hidden by default */
+            display: none;
             pointer-events: auto;
         }
         
-        .loading-container.failed .spinner,
-        .loading-container.failed .loading-text { display: none; }
+        .loading-container.failed .spinner { display: none; }
         .loading-container.failed .retry-btn { display: block; }
 
+        /* --- Visibility Classes --- */
+        .node.active { opacity: 1; pointer-events: auto; z-index: 100; }
+        .node.past { opacity: 0; pointer-events: none; z-index: 0; }
+        .node.future { opacity: 0; pointer-events: none; z-index: 50; transition: opacity 1s ease 0.5s; }
+
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
     </style>
 </head>
 <body>
 
-    <div class="stars"></div>
+    <!-- Input Screen -->
+    <div id="start-screen">
+        <h1>Depth Narrative</h1>
+        <div class="input-group">
+            <input type="text" id="user-input" placeholder="Enter a subject (e.g. Cyberpunk)" maxlength="30">
+            <button class="start-btn" onclick="startDynamicStory()">Generate World</button>
+        </div>
+        <div class="status-msg" id="status-msg"></div>
+    </div>
 
+    <!-- The 3D Engine -->
     <div id="viewport">
         <div id="world"></div>
     </div>
 
+    <!-- Minimal Back Nav -->
     <div id="hud">
-        <button class="back-btn" onclick="retreat()">Retreat</button>
+        <button class="back-btn" onclick="retreat()" aria-label="Go Back"></button>
     </div>
 
     <script>
-        // --- Story Data ---
-        // Revised structure: 'choices' vs 'next'
-        // 'choices': Array of buttons for branching
-        // 'next': String ID for linear path
-        const STORY_NODES = {
-            'start': {
-                id: 'start',
-                title: "The Signal",
-                text: "You intercept a frequency from the void. It feels structured, intelligent.",
-                prompt: "glowing digital radio tower in deep space void minimal",
-                next: 'corridor' // Linear path
-            },
-            'corridor': {
-                id: 'corridor',
-                title: "The Corridor",
-                text: "The path diverges ahead. You must choose your protocol.",
-                prompt: "split path digital hallway left green nature right red tech cinematic",
-                // Branching path using buttons
-                choices: [
-                    { label: "Investigate Bio-Lattice", target: 'nature_fork', type: 'nature' },
-                    { label: "Access Data Spire", target: 'tech_fork', type: 'tech' }
-                ]
-            },
-            'nature_fork': {
-                id: 'nature_fork',
-                title: "Bio-Lattice",
-                text: "Roots made of light intertwine with the code. It is wild here.",
-                prompt: "bioluminescent cybernetic forest glowing roots digital art",
-                next: 'nature_deep'
-            },
-            'nature_deep': {
-                id: 'nature_deep',
-                title: "The Garden",
-                text: "You find the source. A perfect digital ecosystem, self-sustaining and wild.",
-                prompt: "surreal digital garden giant glowing flowers serene",
-                next: null // End of line
-            },
-            'tech_fork': {
-                id: 'tech_fork',
-                title: "Data Spire",
-                text: "Geometric perfection. Hard lines and raw calculation dominate this sector.",
-                prompt: "brutalist red neon obelisk abstract architecture",
-                next: 'tech_deep'
-            },
-            'tech_deep': {
-                id: 'tech_deep',
-                title: "The Core",
-                text: "The central processor. It hums with the processing power of a thousand suns.",
-                prompt: "glowing orange energy sphere reactor complex machine",
-                next: null
-            }
-        };
+        // --- State ---
+        let STORY_NODES = {}; 
+        let currentSubject = ""; // Store subject for style consistency
 
         const CONFIG = {
             depthStep: 1500, 
-            baseStyle: "digital art cinematic lighting 4k",
+            // We append this to user prompt, but the real consistency comes from the system prompt logic
             loadTimeout: 25000
         };
 
         const SESSION_ID = Math.floor(Math.random() * 99999).toString();
-        
         let historyStack = []; 
         let nodeCache = {}; 
         let isAnimating = false; 
         
         const world = document.getElementById('world');
         const hud = document.getElementById('hud');
-        const body = document.body;
+        const startScreen = document.getElementById('start-screen');
+        const statusMsg = document.getElementById('status-msg');
 
-        function init() {
-            const originState = { id: 'start', x: 0, z: 0 };
+        // --- AI Story Generation ---
+
+        async function startDynamicStory() {
+            const input = document.getElementById('user-input').value.trim();
+            if (!input) return;
+
+            currentSubject = input; // Save for style consistency
+            statusMsg.textContent = "Director AI is planning shots...";
+            document.querySelector('.start-btn').disabled = true;
+
+            try {
+                // VISUAL CONTINUITY SYSTEM PROMPT
+                // We instruct the LLM to act as a Director of Photography
+                const systemPrompt = `
+                    You are a visual storyteller and cinematographer. Create a JSON object for a short interactive story about: "${currentSubject}".
+                    
+                    CRITICAL VISUAL RULES:
+                    1. ESTABLISH A VISUAL THEME: Pick a specific color palette (e.g. "teal and orange", "grim dark", "neon pastel") and lighting style.
+                    2. CONTINUITY: The 'image_prompt' fields MUST connect. 
+                       - If Node A is "Wide shot of a temple in distance", 
+                       - Node B MUST be "Low angle shot standing at the temple gates looking up".
+                       - Node C MUST be "Interior shot inside the temple hall".
+                    3. KEYWORDS: Include the visual theme keywords in EVERY 'image_prompt'.
+                    
+                    Structure MUST be:
+                    {
+                        "start": { "title": "...", "text": "...", "image_prompt": "...", "next": "node2" },
+                        "node2": { "title": "...", "text": "...", "image_prompt": "...", "choices": [
+                            {"label": "...", "target": "endA"},
+                            {"label": "...", "target": "endB"}
+                        ]},
+                        "endA": { "title": "...", "text": "...", "image_prompt": "...", "next": null },
+                        "endB": { "title": "...", "text": "...", "image_prompt": "...", "next": null }
+                    }
+                    Keep texts short (under 2 sentences). Return ONLY raw JSON.
+                `;
+
+                const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(systemPrompt)}`);
+                const text = await response.text();
+                
+                let cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const storyData = JSON.parse(cleanJson);
+                
+                Object.keys(storyData).forEach(key => storyData[key].id = key);
+                STORY_NODES = storyData;
+                
+                startScreen.classList.add('hidden');
+                initEngine();
+
+            } catch (e) {
+                console.error(e);
+                statusMsg.textContent = "Using offline backup protocol.";
+                loadFallbackStory(currentSubject);
+                setTimeout(() => {
+                    startScreen.classList.add('hidden');
+                    initEngine();
+                }, 1000);
+            }
+        }
+
+        function loadFallbackStory(subject) {
+            STORY_NODES = {
+                'start': { id: 'start', title: `The ${subject} Horizon`, text: `A vast expanse lies before you. The ${subject} is visible in the distance.`, image_prompt: `cinematic wide shot of ${subject} on horizon, dramatic lighting, 8k`, next: 'corridor' },
+                'corridor': { id: 'corridor', title: 'The Approach', text: 'You move closer. The scale of it is overwhelming.', image_prompt: `low angle shot looking up at giant ${subject}, dramatic lighting, 8k`, choices: [
+                    { label: `Enter the Light`, target: 'endA' },
+                    { label: `Enter the Shadow`, target: 'endB' }
+                ]},
+                'endA': { id: 'endA', title: 'Ascension', text: `You are bathed in light.`, image_prompt: `interior shot of ${subject} filled with blinding heavenly light, dramatic lighting`, next: null },
+                'endB': { id: 'endB', title: 'The Depths', text: `Darkness swallows the world.`, image_prompt: `interior shot of ${subject} filled with dark fog and shadows, dramatic lighting`, next: null }
+            };
+        }
+
+        // --- Engine Logic ---
+
+        function initEngine() {
+            const firstId = STORY_NODES['start'] ? 'start' : Object.keys(STORY_NODES)[0];
+            const originState = { id: firstId, x: 0, z: 0 };
             historyStack.push(originState);
             renderScene();
         }
@@ -396,22 +459,18 @@
             // 2. Ensure DOM Exists
             ensureNodeRendered(currentStep);
 
-            // 3. Pre-render Linear Future Only
-            // If the current node is linear, we can spawn the next card behind it.
-            // If it is a choice node, we DO NOT spawn anything yet (saving bandwidth).
+            // 3. Pre-render Linear Future
             if (currentNodeData.next) {
                 const childId = currentNodeData.next;
-                const childZ = currentStep.z - CONFIG.depthStep;
-                const childX = currentStep.x; // Linear stays on same X
-                const childState = { id: childId, x: childX, z: childZ };
-                ensureNodeRendered(childState);
+                if (STORY_NODES[childId]) {
+                    const childZ = currentStep.z - CONFIG.depthStep;
+                    const childState = { id: childId, x: currentStep.x, z: childZ };
+                    ensureNodeRendered(childState);
+                }
             }
 
-            // 4. Update Visual Classes
             updateNodeVisuals();
             updateHud();
-
-            // 5. Load Current Image
             requestImageLoad(currentStep.id);
         }
 
@@ -419,77 +478,70 @@
             if (nodeCache[nodeState.id]) return;
 
             const data = STORY_NODES[nodeState.id];
+            if (!data) return;
             
             const el = document.createElement('div');
             el.className = 'node future'; 
             el.id = `node-${nodeState.id}`;
             el.style.transform = `translate3d(${nodeState.x}px, 0, ${nodeState.z}px)`;
 
-            // Generate Choice Buttons HTML if choices exist
-            let choicesHtml = '';
+            // Content Generation
+            let contentHtml = '';
+            
             if (data.choices) {
-                choicesHtml = `<div class="choice-container">
+                contentHtml = `<div class="choice-container">
                     ${data.choices.map(c => `
-                        <div class="choice-btn" data-target="${c.target}" data-type="${c.type || 'default'}">
+                        <div class="choice-btn" data-target="${c.target}">
                             ${c.label}
                         </div>
                     `).join('')}
                 </div>`;
             } else if (data.next) {
-                // If linear, maybe add a subtle hint text
-                choicesHtml = `<p style="font-size: 11px; opacity: 0.5; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;">Tap card to proceed</p>`;
+                contentHtml = `<div class="tap-hint">Tap to Continue</div>`;
             }
 
+            // Fallback prompts
+            const p = data.image_prompt || data.prompt || `${currentSubject} ${data.title}`;
+
             el.innerHTML = `
-                <div class="card">
+                <div class="card" data-prompt="${p}">
                     <div class="loading-container">
                         <div class="spinner"></div>
-                        <div class="loading-text">Generating...</div>
-                        <button class="retry-btn">Tap to Retry</button>
+                        <button class="retry-btn">Retry Image</button>
                     </div>
                     <div class="card-image"></div>
                     <div class="text-overlay">
                         <h2>${data.title}</h2>
                         <p>${data.text}</p>
-                        ${choicesHtml}
+                        ${contentHtml}
                     </div>
                 </div>
             `;
 
-            // Setup Listeners
-            
-            // 1. Retry Button
+            // Listeners
             el.querySelector('.retry-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 const cacheEntry = nodeCache[nodeState.id];
                 if (cacheEntry) {
-                    const loader = cacheEntry.el.querySelector('.loading-container');
-                    loader.classList.remove('failed'); 
                     cacheEntry.loadStatus = 'idle'; 
                     cacheEntry.retries = 0; 
+                    cacheEntry.el.querySelector('.loading-container').classList.remove('failed');
                     requestImageLoad(nodeState.id, 0, true);
                 }
             });
 
-            // 2. Choice Buttons
             if (data.choices) {
-                const buttons = el.querySelectorAll('.choice-btn');
-                buttons.forEach(btn => {
+                el.querySelectorAll('.choice-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Don't trigger card click
-                        const targetId = btn.dataset.target;
-                        handleChoice(targetId);
+                        e.stopPropagation();
+                        handleChoice(btn.dataset.target);
                     });
                 });
             }
 
-            // 3. Card Click (Linear Navigation)
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
-                // Only allow card click if it's a linear node
-                if (data.next) {
-                    handleLinearAdvance(data.next);
-                }
+                if (data.next) handleLinearAdvance(data.next);
             });
 
             world.appendChild(el);
@@ -499,14 +551,14 @@
         function requestImageLoad(nodeId, delay = 0, isRetry = false) {
             const cacheEntry = nodeCache[nodeId];
             if (!cacheEntry) return;
-            
             if (cacheEntry.loadStatus !== 'idle' && !isRetry) return;
 
-            const data = STORY_NODES[nodeId];
             cacheEntry.loadStatus = 'loading';
             
             setTimeout(() => {
-                const safePrompt = encodeURIComponent(data.prompt + " " + CONFIG.baseStyle);
+                const rawPrompt = cacheEntry.el.querySelector('.card').dataset.prompt;
+                // Add the subject into the style to force consistency
+                const safePrompt = encodeURIComponent(`${rawPrompt}, ${currentSubject} theme, cinematic lighting, 8k, detailed`);
                 let seed = `${SESSION_ID}_${nodeId}`;
                 if (isRetry) seed += `_${Math.floor(Math.random() * 100)}`;
                 
@@ -515,10 +567,7 @@
                 const img = new Image();
                 
                 const safetyTimer = setTimeout(() => {
-                    if (cacheEntry.loadStatus === 'loading') {
-                        console.warn(`Timeout loading ${nodeId}`);
-                        handleLoadFailure(nodeId);
-                    }
+                    if (cacheEntry.loadStatus === 'loading') handleLoadFailure(nodeId);
                 }, CONFIG.loadTimeout);
 
                 img.onload = () => {
@@ -535,12 +584,9 @@
 
                 img.onerror = () => {
                     clearTimeout(safetyTimer);
-                    console.warn(`Error loading ${nodeId}`);
                     handleLoadFailure(nodeId);
                 };
-                
                 img.src = imgUrl;
-                
             }, delay);
         }
         
@@ -549,45 +595,24 @@
             if (!cacheEntry) return;
 
             if (cacheEntry.retries < 1) {
-                console.log(`Auto-Retrying ${nodeId}...`);
                 cacheEntry.retries++;
-                requestImageLoad(nodeId, 500, true); 
+                requestImageLoad(nodeId, 1000, true); 
             } else {
                 cacheEntry.loadStatus = 'failed';
-                const loader = cacheEntry.el.querySelector('.loading-container');
-                if (loader) loader.classList.add('failed');
+                cacheEntry.el.querySelector('.loading-container').classList.add('failed');
             }
         }
 
         function handleLinearAdvance(nextId) {
             if (isAnimating) return;
-            
             const currentStep = historyStack[historyStack.length - 1];
-            const nextZ = currentStep.z - CONFIG.depthStep;
-            const nextX = currentStep.x; // Linear keeps X
-            
-            advance({ id: nextId, x: nextX, z: nextZ });
+            advance({ id: nextId, x: currentStep.x, z: currentStep.z - CONFIG.depthStep });
         }
 
         function handleChoice(targetId) {
             if (isAnimating) return;
-
             const currentStep = historyStack[historyStack.length - 1];
-            // Since we didn't pre-render the split, we create the new path now.
-            // We just move forward in Z. We can ignore X shift since we aren't showing the split visually.
-            // Or we can shift X slightly to represent the feeling of moving left/right.
-            // Let's shift X slightly for flavor.
-            
-            const targetNode = STORY_NODES[targetId];
-            // Simple logic: if targetId contains 'nature' go left, else right (just for effect)
-            let xOffset = 0;
-            if (targetId.includes('nature')) xOffset = -200;
-            if (targetId.includes('tech')) xOffset = 200;
-
-            const nextZ = currentStep.z - CONFIG.depthStep;
-            const nextX = currentStep.x + xOffset;
-
-            advance({ id: targetId, x: nextX, z: nextZ });
+            advance({ id: targetId, x: currentStep.x, z: currentStep.z - CONFIG.depthStep });
         }
 
         function advance(nextState) {
@@ -598,9 +623,7 @@
         }
 
         function retreat() {
-            if (isAnimating) return;
-            if (historyStack.length <= 1) return;
-            
+            if (isAnimating || historyStack.length <= 1) return;
             isAnimating = true;
             historyStack.pop();
             renderScene();
@@ -616,10 +639,7 @@
 
                 if (state.id === currentId) {
                     el.classList.add('active');
-                    // Add a class if it allows click-to-advance (linear)
-                    if (STORY_NODES[state.id].next) {
-                        el.classList.add('linear-interaction');
-                    }
+                    if (STORY_NODES[state.id].next) el.classList.add('linear-interaction');
                 } else if (historyIds.includes(state.id)) {
                     el.classList.add('past');
                 } else {
@@ -629,14 +649,8 @@
         }
 
         function updateHud() {
-             if (historyStack.length > 1) {
-                hud.classList.add('visible');
-            } else {
-                hud.classList.remove('visible');
-            }
+             hud.classList.toggle('visible', historyStack.length > 1);
         }
-
-        init();
 
     </script>
 </body>
