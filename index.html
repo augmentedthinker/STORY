@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Narrative Depth Engine</title>
+    <style>
+        :root {
+            --depth-step: 1500px;
+            --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+            --neon-accent: #00f3ff;
+            --glass-bg: rgba(10, 10, 10, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-color: #f0f0f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-color);
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px);
+            background-size: 550px 550px, 350px 350px; 
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        #viewport {
+            perspective: 1200px;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #world {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 1.5s var(--ease-out);
+        }
+
+        /* --- HUD --- */
+        #hud {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            display: flex;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #hud.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        button.back-btn {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            color: var(--neon-accent);
+            padding: 12px 32px;
+            border-radius: 30px;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        button.back-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- Nodes & Cards --- */
+        .node {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-style: preserve-3d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease;
+            width: 0; 
+            height: 0;
+        }
+
+        .card {
+            width: 320px;
+            height: 520px; /* Slightly taller to fit buttons */
+            position: absolute;
+            top: -260px; 
+            left: -160px; 
+            
+            background: linear-gradient(135deg, #111 0%, #222 100%);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+            overflow: hidden;
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            cursor: default; /* Default cursor unless linear */
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.4s ease, box-shadow 0.4s ease, opacity 0.5s ease;
+        }
+
+        .node.active.linear-interaction .card {
+            cursor: pointer;
+        }
+
+        .node.active.linear-interaction .card:active {
+            transform: scale(0.98);
+        }
+
+        .card-image {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0; 
+            transition: opacity 0.8s ease;
+            z-index: 1;
+        }
+        
+        .card-image.loaded {
+            opacity: 1;
+        }
+
+        .text-overlay {
+            position: relative;
+            z-index: 3; /* Above image AND loader */
+            width: 100%;
+            padding: 24px;
+            padding-bottom: 32px; 
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .card h2 {
+            margin: 0 0 10px 0;
+            font-weight: 700;
+            font-size: 22px;
+            color: #fff;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .card p {
+            margin: 0 0 16px 0;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #ddd;
+        }
+
+        /* --- Choice Buttons --- */
+        .choice-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .choice-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .choice-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0.98);
+        }
+        
+        /* Highlight specific choices just for flavor */
+        .choice-btn[data-type="nature"] { border-color: #74ee15; color: #baff99; }
+        .choice-btn[data-type="tech"] { border-color: #00f3ff; color: #ccfcff; }
+
+        /* --- Visibility Logic --- */
+        .node.active {
+            opacity: 1;
+            pointer-events: auto; 
+            z-index: 100;
+        }
+        
+        .node.active .card {
+            box-shadow: 0 0 80px rgba(0, 243, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .node.past {
+            opacity: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* FUTURE CARDS */
+        .node.future {
+            opacity: 0; 
+            pointer-events: none;
+            z-index: 50;
+            transition: opacity 1s ease 0.5s; 
+        }
+
+        /* --- LOADING UI --- */
+        .loading-container {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2; 
+            width: 100%;
+        }
+
+        .loading-container.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--neon-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        .loading-text {
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.5);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        /* RETRY BUTTON */
+        .retry-btn {
+            background: rgba(255, 50, 50, 0.2);
+            border: 1px solid rgba(255, 50, 50, 0.5);
+            color: #ff8888;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            display: none; /* Hidden by default */
+            pointer-events: auto;
+        }
+        
+        .loading-container.failed .spinner,
+        .loading-container.failed .loading-text { display: none; }
+        .loading-container.failed .retry-btn { display: block; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+
+    </style>
+</head>
+<body>
+
+    <div class="stars"></div>
+
+    <div id="viewport">
+        <div id="world"></div>
+    </div>
+
+    <div id="hud">
+        <button class="back-btn" onclick="retreat()">Retreat</button>
+    </div>
+
+    <script>
+        // --- Story Data ---
+        // Revised structure: 'choices' vs 'next'
+        // 'choices': Array of buttons for branching
+        // 'next': String ID for linear path
+        const STORY_NODES = {
+            'start': {
+                id: 'start',
+                title: "The Signal",
+                text: "You intercept a frequency from the void. It feels structured, intelligent.",
+                prompt: "glowing digital radio tower in deep space void minimal",
+                next: 'corridor' // Linear path
+            },
+            'corridor': {
+                id: 'corridor',
+                title: "The Corridor",
+                text: "The path diverges ahead. You must choose your protocol.",
+                prompt: "split path digital hallway left green nature right red tech cinematic",
+                // Branching path using buttons
+                choices: [
+                    { label: "Investigate Bio-Lattice", target: 'nature_fork', type: 'nature' },
+                    { label: "Access Data Spire", target: 'tech_fork', type: 'tech' }
+                ]
+            },
+            'nature_fork': {
+                id: 'nature_fork',
+                title: "Bio-Lattice",
+                text: "Roots made of light intertwine with the code. It is wild here.",
+                prompt: "bioluminescent cybernetic forest glowing roots digital art",
+                next: 'nature_deep'
+            },
+            'nature_deep': {
+                id: 'nature_deep',
+                title: "The Garden",
+                text: "You find the source. A perfect digital ecosystem, self-sustaining and wild.",
+                prompt: "surreal digital garden giant glowing flowers serene",
+                next: null // End of line
+            },
+            'tech_fork': {
+                id: 'tech_fork',
+                title: "Data Spire",
+                text: "Geometric perfection. Hard lines and raw calculation dominate this sector.",
+                prompt: "brutalist red neon obelisk abstract architecture",
+                next: 'tech_deep'
+            },
+            'tech_deep': {
+                id: 'tech_deep',
+                title: "The Core",
+                text: "The central processor. It hums with the processing power of a thousand suns.",
+                prompt: "glowing orange energy sphere reactor complex machine",
+                next: null
+            }
+        };
+
+        const CONFIG = {
+            depthStep: 1500, 
+            baseStyle: "digital art cinematic lighting 4k",
+            loadTimeout: 25000
+        };
+
+        const SESSION_ID = Math.floor(Math.random() * 99999).toString();
+        
+        let historyStack = []; 
+        let nodeCache = {}; 
+        let isAnimating = false; 
+        
+        const world = document.getElementById('world');
+        const hud = document.getElementById('hud');
+        const body = document.body;
+
+        function init() {
+            const originState = { id: 'start', x: 0, z: 0 };
+            historyStack.push(originState);
+            renderScene();
+        }
+
+        function renderScene() {
+            const currentStep = historyStack[historyStack.length - 1];
+            const currentNodeData = STORY_NODES[currentStep.id];
+
+            // 1. Move Camera
+            world.style.transform = `translate3d(${-currentStep.x}px, 0, ${-currentStep.z}px)`;
+
+            // 2. Ensure DOM Exists
+            ensureNodeRendered(currentStep);
+
+            // 3. Pre-render Linear Future Only
+            // If the current node is linear, we can spawn the next card behind it.
+            // If it is a choice node, we DO NOT spawn anything yet (saving bandwidth).
+            if (currentNodeData.next) {
+                const childId = currentNodeData.next;
+                const childZ = currentStep.z - CONFIG.depthStep;
+                const childX = currentStep.x; // Linear stays on same X
+                const childState = { id: childId, x: childX, z: childZ };
+                ensureNodeRendered(childState);
+            }
+
+            // 4. Update Visual Classes
+            updateNodeVisuals();
+            updateHud();
+
+            // 5. Load Current Image
+            requestImageLoad(currentStep.id);
+        }
+
+        function ensureNodeRendered(nodeState) {
+            if (nodeCache[nodeState.id]) return;
+
+            const data = STORY_NODES[nodeState.id];
+            
+            const el = document.createElement('div');
+            el.className = 'node future'; 
+            el.id = `node-${nodeState.id}`;
+            el.style.transform = `translate3d(${nodeState.x}px, 0, ${nodeState.z}px)`;
+
+            // Generate Choice Buttons HTML if choices exist
+            let choicesHtml = '';
+            if (data.choices) {
+                choicesHtml = `<div class="choice-container">
+                    ${data.choices.map(c => `
+                        <div class="choice-btn" data-target="${c.target}" data-type="${c.type || 'default'}">
+                            ${c.label}
+                        </div>
+                    `).join('')}
+                </div>`;
+            } else if (data.next) {
+                // If linear, maybe add a subtle hint text
+                choicesHtml = `<p style="font-size: 11px; opacity: 0.5; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;">Tap card to proceed</p>`;
+            }
+
+            el.innerHTML = `
+                <div class="card">
+                    <div class="loading-container">
+                        <div class="spinner"></div>
+                        <div class="loading-text">Generating...</div>
+                        <button class="retry-btn">Tap to Retry</button>
+                    </div>
+                    <div class="card-image"></div>
+                    <div class="text-overlay">
+                        <h2>${data.title}</h2>
+                        <p>${data.text}</p>
+                        ${choicesHtml}
+                    </div>
+                </div>
+            `;
+
+            // Setup Listeners
+            
+            // 1. Retry Button
+            el.querySelector('.retry-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const cacheEntry = nodeCache[nodeState.id];
+                if (cacheEntry) {
+                    const loader = cacheEntry.el.querySelector('.loading-container');
+                    loader.classList.remove('failed'); 
+                    cacheEntry.loadStatus = 'idle'; 
+                    cacheEntry.retries = 0; 
+                    requestImageLoad(nodeState.id, 0, true);
+                }
+            });
+
+            // 2. Choice Buttons
+            if (data.choices) {
+                const buttons = el.querySelectorAll('.choice-btn');
+                buttons.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Don't trigger card click
+                        const targetId = btn.dataset.target;
+                        handleChoice(targetId);
+                    });
+                });
+            }
+
+            // 3. Card Click (Linear Navigation)
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Only allow card click if it's a linear node
+                if (data.next) {
+                    handleLinearAdvance(data.next);
+                }
+            });
+
+            world.appendChild(el);
+            nodeCache[nodeState.id] = { el, state: nodeState, loadStatus: 'idle', retries: 0 };
+        }
+
+        function requestImageLoad(nodeId, delay = 0, isRetry = false) {
+            const cacheEntry = nodeCache[nodeId];
+            if (!cacheEntry) return;
+            
+            if (cacheEntry.loadStatus !== 'idle' && !isRetry) return;
+
+            const data = STORY_NODES[nodeId];
+            cacheEntry.loadStatus = 'loading';
+            
+            setTimeout(() => {
+                const safePrompt = encodeURIComponent(data.prompt + " " + CONFIG.baseStyle);
+                let seed = `${SESSION_ID}_${nodeId}`;
+                if (isRetry) seed += `_${Math.floor(Math.random() * 100)}`;
+                
+                const imgUrl = `https://image.pollinations.ai/prompt/${safePrompt}?seed=${seed}&nologo=true&model=flux`;
+
+                const img = new Image();
+                
+                const safetyTimer = setTimeout(() => {
+                    if (cacheEntry.loadStatus === 'loading') {
+                        console.warn(`Timeout loading ${nodeId}`);
+                        handleLoadFailure(nodeId);
+                    }
+                }, CONFIG.loadTimeout);
+
+                img.onload = () => {
+                    clearTimeout(safetyTimer);
+                    cacheEntry.loadStatus = 'loaded';
+                    const imgDiv = cacheEntry.el.querySelector('.card-image');
+                    const loader = cacheEntry.el.querySelector('.loading-container');
+                    if (imgDiv) {
+                        imgDiv.style.backgroundImage = `url('${imgUrl}')`;
+                        imgDiv.classList.add('loaded');
+                    }
+                    if (loader) loader.classList.add('hidden');
+                };
+
+                img.onerror = () => {
+                    clearTimeout(safetyTimer);
+                    console.warn(`Error loading ${nodeId}`);
+                    handleLoadFailure(nodeId);
+                };
+                
+                img.src = imgUrl;
+                
+            }, delay);
+        }
+        
+        function handleLoadFailure(nodeId) {
+            const cacheEntry = nodeCache[nodeId];
+            if (!cacheEntry) return;
+
+            if (cacheEntry.retries < 1) {
+                console.log(`Auto-Retrying ${nodeId}...`);
+                cacheEntry.retries++;
+                requestImageLoad(nodeId, 500, true); 
+            } else {
+                cacheEntry.loadStatus = 'failed';
+                const loader = cacheEntry.el.querySelector('.loading-container');
+                if (loader) loader.classList.add('failed');
+            }
+        }
+
+        function handleLinearAdvance(nextId) {
+            if (isAnimating) return;
+            
+            const currentStep = historyStack[historyStack.length - 1];
+            const nextZ = currentStep.z - CONFIG.depthStep;
+            const nextX = currentStep.x; // Linear keeps X
+            
+            advance({ id: nextId, x: nextX, z: nextZ });
+        }
+
+        function handleChoice(targetId) {
+            if (isAnimating) return;
+
+            const currentStep = historyStack[historyStack.length - 1];
+            // Since we didn't pre-render the split, we create the new path now.
+            // We just move forward in Z. We can ignore X shift since we aren't showing the split visually.
+            // Or we can shift X slightly to represent the feeling of moving left/right.
+            // Let's shift X slightly for flavor.
+            
+            const targetNode = STORY_NODES[targetId];
+            // Simple logic: if targetId contains 'nature' go left, else right (just for effect)
+            let xOffset = 0;
+            if (targetId.includes('nature')) xOffset = -200;
+            if (targetId.includes('tech')) xOffset = 200;
+
+            const nextZ = currentStep.z - CONFIG.depthStep;
+            const nextX = currentStep.x + xOffset;
+
+            advance({ id: targetId, x: nextX, z: nextZ });
+        }
+
+        function advance(nextState) {
+            isAnimating = true;
+            historyStack.push(nextState);
+            renderScene();
+            setTimeout(() => { isAnimating = false; }, 1500);
+        }
+
+        function retreat() {
+            if (isAnimating) return;
+            if (historyStack.length <= 1) return;
+            
+            isAnimating = true;
+            historyStack.pop();
+            renderScene();
+            setTimeout(() => { isAnimating = false; }, 1500);
+        }
+
+        function updateNodeVisuals() {
+            const currentId = historyStack[historyStack.length - 1].id;
+            const historyIds = historyStack.map(h => h.id);
+
+            Object.values(nodeCache).forEach(({ el, state }) => {
+                el.classList.remove('active', 'past', 'future', 'linear-interaction');
+
+                if (state.id === currentId) {
+                    el.classList.add('active');
+                    // Add a class if it allows click-to-advance (linear)
+                    if (STORY_NODES[state.id].next) {
+                        el.classList.add('linear-interaction');
+                    }
+                } else if (historyIds.includes(state.id)) {
+                    el.classList.add('past');
+                } else {
+                    el.classList.add('future');
+                }
+            });
+        }
+
+        function updateHud() {
+             if (historyStack.length > 1) {
+                hud.classList.add('visible');
+            } else {
+                hud.classList.remove('visible');
+            }
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
