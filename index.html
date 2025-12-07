@@ -11,6 +11,12 @@
             --neon-accent: #00f3ff;
             --glass-bg: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,0) 100%);
             --text-color: #f0f0f0;
+            
+            /* Retro Palette - Updated to Purple/Blue from reference image */
+            --retro-purple: #240038;
+            --retro-blue: #00a8ff;
+            --retro-sun-top: #a855f7; /* Light Purple */
+            --retro-sun-bot: #3b82f6; /* Blue */
         }
 
         * {
@@ -70,7 +76,6 @@
             border: 1px solid rgba(255,255,255,0.3);
             padding: 15px;
             color: white;
-            /* Font size 16px+ prevents iOS zoom */
             font-size: 18px; 
             border-radius: 8px;
             outline: none;
@@ -146,7 +151,7 @@
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            width: 44px; /* Mobile touch target min */
+            width: 44px; 
             height: 44px;
             border-radius: 50%;
             font-size: 20px;
@@ -187,7 +192,7 @@
             flex-direction: column;
             justify-content: flex-end;
             cursor: default;
-            box-shadow: 0 0 150px rgba(0,0,0,1); /* Depth shadow */
+            box-shadow: 0 0 150px rgba(0,0,0,1); 
             transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
         }
 
@@ -200,8 +205,7 @@
             background-position: center;
             opacity: 0; 
             transition: opacity 1s ease;
-            z-index: 1;
-            /* Gradient overlay to ensure text is readable */
+            z-index: 2; 
             box-shadow: inset 0 -30vh 20vh rgba(0,0,0,0.9);
         }
         
@@ -211,9 +215,7 @@
             position: relative;
             z-index: 3;
             width: 100%;
-            /* Gradient for text readability */
             background: var(--glass-bg);
-            /* Extra bottom padding for iPhone home bar */
             padding: 20px 24px 50px 24px; 
             text-align: center;
         }
@@ -221,7 +223,7 @@
         .card h2 {
             margin: 0 0 10px 0;
             font-weight: 800;
-            font-size: 26px; /* Optimized for mobile readability */
+            font-size: 26px;
             color: #fff;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -253,7 +255,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 16px; /* Nice tall hit target */
+            padding: 16px; 
             border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
@@ -276,26 +278,141 @@
             animation: pulse 2s infinite;
         }
 
+        /* --- 80s RETRO DREAM LAYER (FIXED LAYERING) --- */
+        .dream-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, #0a001a 0%, #1a002e 50%, #000 50%); 
+            z-index: 1;
+            overflow: hidden;
+            transition: opacity 1s ease;
+        }
+        
+        .dream-layer.hidden {
+            opacity: 0;
+        }
+
+        /* The Sun (Moved UP to sit ON the horizon) */
+        .retro-sun {
+            position: absolute;
+            left: 50%;
+            top: 50%; /* Horizon Line */
+            /* Translate -100% on Y means the bottom of the element is at top: 50% */
+            transform: translate(-50%, -100%); 
+            width: 35vw; 
+            height: 35vw;
+            max-width: 280px; max-height: 280px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, var(--retro-sun-top), var(--retro-sun-bot));
+            
+            /* Venetian Blinds - Extended to bottom edge */
+            -webkit-mask-image: linear-gradient(to bottom, 
+                black 0%, black 50%, 
+                transparent 50%, transparent 54%, 
+                black 54%, black 60%, 
+                transparent 60%, transparent 64%, 
+                black 64%, black 70%,
+                transparent 70%, transparent 74%,
+                black 74%, black 80%,
+                transparent 80%, transparent 84%,
+                black 84%, black 90%,
+                transparent 90%, transparent 94%,
+                black 94%, black 100%
+            );
+            mask-image: linear-gradient(...);
+            
+            box-shadow: 0 0 60px var(--retro-sun-bot);
+            /* Z-Index 3: Sits on top of grid and reflection */
+            z-index: 3; 
+        }
+
+        /* The Sun Reflection (Fixed Layering) */
+        .retro-reflection {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, 0);
+            width: 35vw; 
+            max-width: 280px;
+            height: 25vh;
+            background: linear-gradient(to bottom, var(--retro-sun-bot), transparent);
+            filter: blur(15px);
+            opacity: 0.8;
+            /* Z-Index 2: Sits ON TOP of the grid lines */
+            z-index: 2; 
+        }
+
+        /* The Grid Floor (Fixed Layering) */
+        .retro-grid {
+            position: absolute;
+            top: 50%; 
+            left: -50%;
+            width: 200%;
+            height: 100%; 
+            
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.6) 4px, transparent 4px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.6) 4px, transparent 4px);
+            background-size: 80px 80px;
+            
+            transform-origin: 50% 0%;
+            transform: perspective(300px) rotateX(80deg); 
+            
+            animation: synth-scroll 8s linear infinite;
+            /* Z-Index 1: The base layer */
+            z-index: 1;
+            
+            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+        }
+
+        /* The Horizon Glow Line (Fixed Layering) */
+        .retro-horizon {
+            position: absolute;
+            top: 50%; left: 0; width: 100%; height: 2px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 20px 3px var(--retro-sun-bot);
+            /* Z-Index 4: The topmost element of the scene */
+            z-index: 4;
+        }
+
+        @keyframes synth-scroll {
+            from { background-position: 0 0; }
+            to { background-position: 0 80px; }
+        }
+
         /* --- Loading / Error --- */
         .loading-container {
             position: absolute;
-            top: 50%; left: 50%;
+            top: 25%; left: 50%; 
             transform: translate(-50%, -50%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            z-index: 2; 
+            /* Z-Index 5: Sits above the entire scene */
+            z-index: 5; 
         }
 
         .loading-container.hidden { display: none; }
 
+        .loading-text {
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            /* Clean White Text, removed glow */
+            color: white; 
+            margin-top: 15px;
+            background: rgba(0,0,0,0.6); 
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
         .spinner {
-            width: 50px; height: 50px;
-            border: 4px solid rgba(255,255,255,0.1);
-            border-top-color: var(--neon-accent);
+            width: 40px; height: 40px;
+            /* Clean White Spinner */
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-bottom: 16px;
         }
         
         .retry-btn {
@@ -310,9 +427,11 @@
             cursor: pointer;
             display: none;
             pointer-events: auto;
+            margin-top: 20px;
         }
         
-        .loading-container.failed .spinner { display: none; }
+        .loading-container.failed .spinner,
+        .loading-container.failed .loading-text { display: none; }
         .loading-container.failed .retry-btn { display: block; }
 
         /* --- Visibility Classes --- */
@@ -321,7 +440,6 @@
         .node.future { opacity: 0; pointer-events: none; z-index: 50; transition: opacity 1s ease 0.5s; }
 
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
     </style>
 </head>
@@ -354,7 +472,6 @@
 
         const CONFIG = {
             depthStep: 1500, 
-            // We append this to user prompt, but the real consistency comes from the system prompt logic
             loadTimeout: 25000
         };
 
@@ -380,7 +497,6 @@
 
             try {
                 // VISUAL CONTINUITY SYSTEM PROMPT
-                // We instruct the LLM to act as a Director of Photography
                 const systemPrompt = `
                     You are a visual storyteller and cinematographer. Create a JSON object for a short interactive story about: "${currentSubject}".
                     
@@ -503,10 +619,18 @@
             // Fallback prompts
             const p = data.image_prompt || data.prompt || `${currentSubject} ${data.title}`;
 
+            // Inject the Retro Dream Layer
             el.innerHTML = `
                 <div class="card" data-prompt="${p}">
+                    <div class="dream-layer">
+                        <div class="retro-sun"></div>
+                        <div class="retro-reflection"></div>
+                        <div class="retro-horizon"></div>
+                        <div class="retro-grid"></div>
+                    </div>
                     <div class="loading-container">
                         <div class="spinner"></div>
+                        <div class="loading-text">Dreaming...</div>
                         <button class="retry-btn">Retry Image</button>
                     </div>
                     <div class="card-image"></div>
@@ -570,20 +694,54 @@
                     if (cacheEntry.loadStatus === 'loading') handleLoadFailure(nodeId);
                 }, CONFIG.loadTimeout);
 
+                // Animate status text while waiting (Updated with Humorous Phrases)
+                const loadingText = cacheEntry.el.querySelector('.loading-text');
+                const phrases = [
+                    "Gosh, this is taking a long time...",
+                    "How long is this going to take?", 
+                    "Mom, are we there yet?",
+                    "Reticulating splines...",
+                    "Feeding the server hamsters...",
+                    "Still thinking...",
+                    "Any second now...",
+                    "Just staring at the void..."
+                ];
+                
+                // Pick a random start index so it doesn't always start with the same complaint
+                let phraseIdx = Math.floor(Math.random() * phrases.length);
+                
+                // Set initial text immediately
+                if (loadingText) loadingText.textContent = phrases[phraseIdx];
+
+                const textInterval = setInterval(() => {
+                    if (cacheEntry.loadStatus === 'loading' && loadingText) {
+                        phraseIdx = (phraseIdx + 1) % phrases.length;
+                        loadingText.textContent = phrases[phraseIdx];
+                    } else {
+                        clearInterval(textInterval);
+                    }
+                }, 2500); // Changed to 2.5s so you have time to read the joke
+
                 img.onload = () => {
                     clearTimeout(safetyTimer);
+                    clearInterval(textInterval);
                     cacheEntry.loadStatus = 'loaded';
+                    
                     const imgDiv = cacheEntry.el.querySelector('.card-image');
                     const loader = cacheEntry.el.querySelector('.loading-container');
+                    const dreamLayer = cacheEntry.el.querySelector('.dream-layer');
+                    
                     if (imgDiv) {
                         imgDiv.style.backgroundImage = `url('${imgUrl}')`;
                         imgDiv.classList.add('loaded');
                     }
                     if (loader) loader.classList.add('hidden');
+                    if (dreamLayer) dreamLayer.classList.add('hidden');
                 };
 
                 img.onerror = () => {
                     clearTimeout(safetyTimer);
+                    clearInterval(textInterval);
                     handleLoadFailure(nodeId);
                 };
                 img.src = imgUrl;
