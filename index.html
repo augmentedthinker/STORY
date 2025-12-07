@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Narrative Depth Engine</title>
+    <title>Infinite Horizon</title>
     <style>
         :root {
             --depth-step: 1500px;
@@ -12,11 +12,13 @@
             --glass-bg: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,0) 100%);
             --text-color: #f0f0f0;
             
-            /* Retro Palette - Updated to Purple/Blue from reference image */
+            /* Retro Palette */
             --retro-purple: #240038;
             --retro-blue: #00a8ff;
-            --retro-sun-top: #a855f7; /* Light Purple */
-            --retro-sun-bot: #3b82f6; /* Blue */
+            --retro-sun-top: #a855f7; 
+            --retro-sun-bot: #3b82f6; 
+            --retro-pink: #d12e68;
+            --retro-orange: #ff9933;
         }
 
         * {
@@ -35,11 +37,10 @@
             width: 100vw;
         }
 
-        /* --- START SCREEN (Input) --- */
+        /* --- START SCREEN --- */
         #start-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
             z-index: 2000;
             display: flex;
             flex-direction: column;
@@ -54,63 +55,206 @@
             pointer-events: none;
         }
 
+        .start-content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            /* Darker backing to ensure text pops against the sun */
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 40px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
         h1 {
-            font-size: 24px;
-            margin-bottom: 30px;
-            letter-spacing: 2px;
+            font-size: 32px;
+            margin: 0 0 10px 0;
+            letter-spacing: 4px;
             text-transform: uppercase;
             color: white;
-            text-align: center;
+            text-shadow: 0 0 15px var(--neon-accent);
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        
+        .tagline {
+            font-size: 14px;
+            color: var(--neon-accent);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+        
+        .description {
+            font-size: 14px;
+            color: #ccc;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            max-width: 280px;
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
             width: 100%;
-            max-width: 320px;
             gap: 15px;
         }
 
         input[type="text"] {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 16px;
             color: white;
-            font-size: 18px; 
+            font-size: 16px; 
             border-radius: 8px;
             outline: none;
             text-align: center;
+            transition: border-color 0.3s, background 0.3s;
         }
         
         input[type="text"]:focus {
             border-color: var(--neon-accent);
-            background: rgba(255,255,255,0.15);
+            background: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
         }
 
         .start-btn {
-            background: var(--neon-accent);
-            color: black;
+            background: linear-gradient(135deg, var(--neon-accent), var(--retro-blue));
+            color: #000;
             border: none;
-            padding: 15px;
+            padding: 16px;
             font-size: 16px;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 243, 255, 0.3);
         }
 
         .start-btn:active {
             transform: scale(0.98);
         }
 
+        .share-btn-main {
+            margin-top: 20px;
+            background: transparent;
+            border: 1px solid var(--retro-pink);
+            color: var(--retro-pink);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .share-btn-main:hover {
+            background: rgba(209, 46, 104, 0.1);
+            box-shadow: 0 0 15px rgba(209, 46, 104, 0.3);
+        }
+
         .status-msg {
             margin-top: 20px;
             font-size: 12px;
-            color: #888;
+            color: rgba(255, 255, 255, 0.6);
             height: 20px;
             text-align: center;
+            letter-spacing: 1px;
+        }
+
+        /* --- QR OVERLAY --- */
+        #qr-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #qr-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .qr-card {
+            background: rgba(20, 10, 30, 0.9);
+            border: 1px solid var(--neon-accent);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.2);
+            position: relative;
+            max-width: 90%;
+        }
+
+        .qr-card h2 {
+            font-size: 20px;
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: none;
+        }
+
+        .qr-frame {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 0 auto 20px auto;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        #qr-image {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .qr-emoji {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            background: #fff;
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            animation: pulse-emoji 2s infinite;
+        }
+
+        .close-qr-btn {
+            background: var(--retro-pink);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes pulse-emoji {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
         }
 
         /* --- 3D WORLD --- */
@@ -132,65 +276,57 @@
             transition: transform 1.5s var(--ease-out);
         }
 
-        /* --- Minimal Back Button --- */
+        /* --- HUD --- */
         #hud {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 20px; left: 20px;
             z-index: 1000;
-            opacity: 0;
+            opacity: 0; 
             transition: opacity 0.5s ease;
         }
 
-        #hud.visible {
-            opacity: 1;
-        }
+        #hud.visible { opacity: 1; }
 
-        button.back-btn {
+        .hud-btn {
             background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            width: 44px; 
-            height: 44px;
-            border-radius: 50%;
-            font-size: 20px;
-            line-height: 1;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
         }
         
-        button.back-btn::before {
-            content: "←";
-        }
+        .hud-btn:active { background: rgba(255, 255, 255, 0.2); }
 
-        /* --- FULL SCREEN NODES --- */
+        #back-btn { width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 20px; }
+        #restart-btn { padding: 10px 20px; display: none; }
+
+        /* --- NODES --- */
         .node {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform-style: preserve-3d;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             transition: opacity 0.8s ease;
             width: 0; height: 0;
         }
 
         .card {
-            width: 100vw;
-            height: 100vh;
+            width: 100vw; height: 100vh;
             position: absolute;
-            top: -50vh;
-            left: -50vw;
+            top: -50vh; left: -50vw;
             background: #000;
             border-radius: 0; 
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
+            display: flex; flex-direction: column; justify-content: flex-end;
             cursor: default;
             box-shadow: 0 0 150px rgba(0,0,0,1); 
             transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
@@ -201,8 +337,7 @@
         .card-image {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-size: cover;
-            background-position: center;
+            background-size: cover; background-position: center;
             opacity: 0; 
             transition: opacity 1s ease;
             z-index: 2; 
@@ -240,14 +375,9 @@
             margin-right: auto;
         }
 
-        /* --- Choice Buttons --- */
         .choice-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+            display: flex; flex-direction: column; gap: 12px;
+            width: 100%; max-width: 400px; margin: 0 auto;
         }
 
         .choice-btn {
@@ -257,8 +387,7 @@
             color: white;
             padding: 16px; 
             border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 16px; font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             text-align: center;
@@ -269,16 +398,25 @@
             transform: scale(0.96);
         }
         
+        /* The Tap Animation */
         .tap-hint {
-            font-size: 12px; 
-            opacity: 0.6; 
-            margin-top: 10px; 
+            font-size: 14px; 
+            font-weight: 700;
+            color: var(--neon-accent);
+            margin-top: 20px; 
             text-transform: uppercase; 
-            letter-spacing: 2px;
-            animation: pulse 2s infinite;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
+            animation: bounce-hint 1.5s ease-in-out infinite;
+            pointer-events: none; 
         }
 
-        /* --- 80s RETRO DREAM LAYER (FIXED LAYERING) --- */
+        @keyframes bounce-hint {
+            0%, 100% { transform: translateY(0); opacity: 0.5; }
+            50% { transform: translateY(8px); opacity: 1; }
+        }
+
+        /* --- 80s RETRO DREAM LAYER (Z-Index Fixed) --- */
         .dream-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -288,24 +426,57 @@
             transition: opacity 1s ease;
         }
         
-        .dream-layer.hidden {
-            opacity: 0;
+        .dream-layer.hidden { opacity: 0; }
+
+        /* HORIZON: Highest Z-Index to cut cleanly */
+        .retro-horizon {
+            position: absolute;
+            top: 50%; left: 0; width: 100%; height: 2px;
+            background: var(--retro-orange);
+            box-shadow: 0 0 25px 5px var(--retro-orange);
+            z-index: 4;
         }
 
-        /* The Sun (Moved UP to sit ON the horizon) */
+        /* GRID: Z-Index 2 (Above reflection, below horizon) */
+        .retro-grid {
+            position: absolute;
+            top: 50%; left: -50%; width: 200%; height: 100%; 
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.6) 4px, transparent 4px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.6) 4px, transparent 4px);
+            background-size: 80px 80px;
+            transform-origin: 50% 0%;
+            transform: perspective(300px) rotateX(80deg); 
+            animation: synth-scroll 8s linear infinite;
+            z-index: 2; /* KEY FIX: Above reflection */
+            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+        }
+
+        /* REFLECTION: Z-Index 1 (Bottom) */
+        .retro-reflection {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, 0);
+            width: 35vw; max-width: 280px; height: 25vh;
+            background: linear-gradient(to bottom, var(--retro-sun-bot), transparent);
+            filter: blur(15px);
+            opacity: 0.8;
+            z-index: 1; 
+        }
+
+        /* SUN: Z-Index 3 (Behind horizon, above sky) */
         .retro-sun {
             position: absolute;
             left: 50%;
-            top: 50%; /* Horizon Line */
-            /* Translate -100% on Y means the bottom of the element is at top: 50% */
+            top: 50%; 
             transform: translate(-50%, -100%); 
-            width: 35vw; 
-            height: 35vw;
+            width: 35vw; height: 35vw;
             max-width: 280px; max-height: 280px;
             border-radius: 50%;
             background: linear-gradient(to bottom, var(--retro-sun-top), var(--retro-sun-bot));
             
-            /* Venetian Blinds - Extended to bottom edge */
+            /* Venetian Blinds */
             -webkit-mask-image: linear-gradient(to bottom, 
                 black 0%, black 50%, 
                 transparent 50%, transparent 54%, 
@@ -322,59 +493,22 @@
             mask-image: linear-gradient(...);
             
             box-shadow: 0 0 60px var(--retro-sun-bot);
-            /* Z-Index 3: Sits on top of grid and reflection */
             z-index: 3; 
         }
 
-        /* The Sun Reflection (Fixed Layering) */
-        .retro-reflection {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, 0);
-            width: 35vw; 
-            max-width: 280px;
-            height: 25vh;
-            background: linear-gradient(to bottom, var(--retro-sun-bot), transparent);
-            filter: blur(15px);
-            opacity: 0.8;
-            /* Z-Index 2: Sits ON TOP of the grid lines */
-            z-index: 2; 
+        .retro-sun.animated {
+            background: linear-gradient(to right, 
+                var(--retro-sun-top), var(--retro-sun-bot), 
+                var(--retro-pink), var(--retro-orange), var(--retro-sun-top)
+            );
+            background-size: 400% 100%; 
+            animation: sun-scroll 8s linear infinite; 
         }
 
-        /* The Grid Floor (Fixed Layering) */
-        .retro-grid {
-            position: absolute;
-            top: 50%; 
-            left: -50%;
-            width: 200%;
-            height: 100%; 
-            
-            background-image: 
-                linear-gradient(rgba(59, 130, 246, 0.6) 4px, transparent 4px),
-                linear-gradient(90deg, rgba(59, 130, 246, 0.6) 4px, transparent 4px);
-            background-size: 80px 80px;
-            
-            transform-origin: 50% 0%;
-            transform: perspective(300px) rotateX(80deg); 
-            
-            animation: synth-scroll 8s linear infinite;
-            /* Z-Index 1: The base layer */
-            z-index: 1;
-            
-            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+        @keyframes sun-scroll {
+            0% { background-position: 0% center; }
+            100% { background-position: -300% center; }
         }
-
-        /* The Horizon Glow Line (Fixed Layering) */
-        .retro-horizon {
-            position: absolute;
-            top: 50%; left: 0; width: 100%; height: 2px;
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 0 20px 3px var(--retro-sun-bot);
-            /* Z-Index 4: The topmost element of the scene */
-            z-index: 4;
-        }
-
         @keyframes synth-scroll {
             from { background-position: 0 0; }
             to { background-position: 0 80px; }
@@ -388,31 +522,23 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Z-Index 5: Sits above the entire scene */
             z-index: 5; 
         }
 
         .loading-container.hidden { display: none; }
 
         .loading-text {
-            font-size: 10px;
-            letter-spacing: 3px;
+            font-size: 14px; 
+            font-weight: 600;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            /* Clean White Text, removed glow */
             color: white; 
             margin-top: 15px;
             background: rgba(0,0,0,0.6); 
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .spinner {
-            width: 40px; height: 40px;
-            /* Clean White Spinner */
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+            white-space: nowrap;
         }
         
         .retry-btn {
@@ -430,16 +556,13 @@
             margin-top: 20px;
         }
         
-        .loading-container.failed .spinner,
         .loading-container.failed .loading-text { display: none; }
         .loading-container.failed .retry-btn { display: block; }
 
-        /* --- Visibility Classes --- */
+        /* --- Visibility --- */
         .node.active { opacity: 1; pointer-events: auto; z-index: 100; }
         .node.past { opacity: 0; pointer-events: none; z-index: 0; }
         .node.future { opacity: 0; pointer-events: none; z-index: 50; transition: opacity 1s ease 0.5s; }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
 
     </style>
 </head>
@@ -447,12 +570,40 @@
 
     <!-- Input Screen -->
     <div id="start-screen">
-        <h1>Depth Narrative</h1>
-        <div class="input-group">
-            <input type="text" id="user-input" placeholder="Enter a subject (e.g. Cyberpunk)" maxlength="30">
-            <button class="start-btn" onclick="startDynamicStory()">Generate World</button>
+        <div class="dream-layer" style="z-index: 0;">
+            <div class="retro-sun"></div>
+            <div class="retro-reflection"></div>
+            <div class="retro-horizon"></div>
+            <div class="retro-grid"></div>
         </div>
-        <div class="status-msg" id="status-msg"></div>
+        
+        <div class="start-content">
+            <h1>Infinite<br>Horizon</h1>
+            <div class="tagline">A Generative AI Adventure</div>
+            <div class="description">
+                Type any subject. The AI builds the world.<br>
+                You choose the path.
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="user-input" placeholder="e.g. Cyberpunk, Ancient Rome, Tacos" maxlength="30">
+                <button class="start-btn" onclick="startDynamicStory()">Enter Simulation</button>
+            </div>
+            <button class="share-btn-main" onclick="showQRCode()">Share Signal</button>
+            <div class="status-msg" id="status-msg"></div>
+        </div>
+    </div>
+
+    <!-- QR Overlay -->
+    <div id="qr-overlay">
+        <div class="qr-card">
+            <h2>Join the Simulation</h2>
+            <div class="qr-frame">
+                <img id="qr-image" src="" alt="QR Code">
+                <div class="qr-emoji">🤖</div>
+            </div>
+            <button class="close-qr-btn" onclick="hideQRCode()">Close</button>
+        </div>
     </div>
 
     <!-- The 3D Engine -->
@@ -460,15 +611,16 @@
         <div id="world"></div>
     </div>
 
-    <!-- Minimal Back Nav -->
+    <!-- HUD -->
     <div id="hud">
-        <button class="back-btn" onclick="retreat()" aria-label="Go Back"></button>
+        <button id="back-btn" class="hud-btn" onclick="retreat()">←</button>
+        <button id="restart-btn" class="hud-btn" onclick="resetGame()">New Voyage</button>
     </div>
 
     <script>
         // --- State ---
         let STORY_NODES = {}; 
-        let currentSubject = ""; // Store subject for style consistency
+        let currentSubject = ""; 
 
         const CONFIG = {
             depthStep: 1500, 
@@ -482,21 +634,32 @@
         
         const world = document.getElementById('world');
         const hud = document.getElementById('hud');
+        const backBtn = document.getElementById('back-btn');
+        const restartBtn = document.getElementById('restart-btn');
         const startScreen = document.getElementById('start-screen');
         const statusMsg = document.getElementById('status-msg');
+        const qrOverlay = document.getElementById('qr-overlay');
+        const qrImage = document.getElementById('qr-image');
 
-        // --- AI Story Generation ---
+        function showQRCode() {
+            const url = window.location.href;
+            qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}&color=00f3ff&bgcolor=1a0b2e&margin=10`;
+            qrOverlay.classList.add('visible');
+        }
+
+        function hideQRCode() {
+            qrOverlay.classList.remove('visible');
+        }
 
         async function startDynamicStory() {
             const input = document.getElementById('user-input').value.trim();
             if (!input) return;
 
-            currentSubject = input; // Save for style consistency
+            currentSubject = input; 
             statusMsg.textContent = "Director AI is planning shots...";
             document.querySelector('.start-btn').disabled = true;
 
             try {
-                // VISUAL CONTINUITY SYSTEM PROMPT
                 const systemPrompt = `
                     You are a visual storyteller and cinematographer. Create a JSON object for a short interactive story about: "${currentSubject}".
                     
@@ -556,8 +719,6 @@
             };
         }
 
-        // --- Engine Logic ---
-
         function initEngine() {
             const firstId = STORY_NODES['start'] ? 'start' : Object.keys(STORY_NODES)[0];
             const originState = { id: firstId, x: 0, z: 0 };
@@ -565,17 +726,26 @@
             renderScene();
         }
 
+        function resetGame() {
+            historyStack = [];
+            nodeCache = {};
+            STORY_NODES = {};
+            world.innerHTML = '';
+            
+            startScreen.classList.remove('hidden');
+            hud.classList.remove('visible');
+            document.querySelector('.start-btn').disabled = false;
+            statusMsg.textContent = "";
+            document.getElementById('user-input').value = "";
+        }
+
         function renderScene() {
             const currentStep = historyStack[historyStack.length - 1];
             const currentNodeData = STORY_NODES[currentStep.id];
 
-            // 1. Move Camera
             world.style.transform = `translate3d(${-currentStep.x}px, 0, ${-currentStep.z}px)`;
-
-            // 2. Ensure DOM Exists
             ensureNodeRendered(currentStep);
 
-            // 3. Pre-render Linear Future
             if (currentNodeData.next) {
                 const childId = currentNodeData.next;
                 if (STORY_NODES[childId]) {
@@ -601,7 +771,6 @@
             el.id = `node-${nodeState.id}`;
             el.style.transform = `translate3d(${nodeState.x}px, 0, ${nodeState.z}px)`;
 
-            // Content Generation
             let contentHtml = '';
             
             if (data.choices) {
@@ -613,23 +782,21 @@
                     `).join('')}
                 </div>`;
             } else if (data.next) {
-                contentHtml = `<div class="tap-hint">Tap to Continue</div>`;
+                // Bounce animation on hint
+                contentHtml = `<div class="tap-hint">Tap to Continue ▼</div>`;
             }
 
-            // Fallback prompts
             const p = data.image_prompt || data.prompt || `${currentSubject} ${data.title}`;
 
-            // Inject the Retro Dream Layer
             el.innerHTML = `
                 <div class="card" data-prompt="${p}">
                     <div class="dream-layer">
-                        <div class="retro-sun"></div>
+                        <div class="retro-sun animated"></div>
                         <div class="retro-reflection"></div>
                         <div class="retro-horizon"></div>
                         <div class="retro-grid"></div>
                     </div>
                     <div class="loading-container">
-                        <div class="spinner"></div>
                         <div class="loading-text">Dreaming...</div>
                         <button class="retry-btn">Retry Image</button>
                     </div>
@@ -642,7 +809,6 @@
                 </div>
             `;
 
-            // Listeners
             el.querySelector('.retry-btn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 const cacheEntry = nodeCache[nodeState.id];
@@ -681,7 +847,6 @@
             
             setTimeout(() => {
                 const rawPrompt = cacheEntry.el.querySelector('.card').dataset.prompt;
-                // Add the subject into the style to force consistency
                 const safePrompt = encodeURIComponent(`${rawPrompt}, ${currentSubject} theme, cinematic lighting, 8k, detailed`);
                 let seed = `${SESSION_ID}_${nodeId}`;
                 if (isRetry) seed += `_${Math.floor(Math.random() * 100)}`;
@@ -694,9 +859,9 @@
                     if (cacheEntry.loadStatus === 'loading') handleLoadFailure(nodeId);
                 }, CONFIG.loadTimeout);
 
-                // Animate status text while waiting (Updated with Humorous Phrases)
                 const loadingText = cacheEntry.el.querySelector('.loading-text');
                 const phrases = [
+                    "The AI is taking a moment...",
                     "Gosh, this is taking a long time...",
                     "How long is this going to take?", 
                     "Mom, are we there yet?",
@@ -707,10 +872,7 @@
                     "Just staring at the void..."
                 ];
                 
-                // Pick a random start index so it doesn't always start with the same complaint
                 let phraseIdx = Math.floor(Math.random() * phrases.length);
-                
-                // Set initial text immediately
                 if (loadingText) loadingText.textContent = phrases[phraseIdx];
 
                 const textInterval = setInterval(() => {
@@ -720,7 +882,7 @@
                     } else {
                         clearInterval(textInterval);
                     }
-                }, 2500); // Changed to 2.5s so you have time to read the joke
+                }, 4000); 
 
                 img.onload = () => {
                     clearTimeout(safetyTimer);
@@ -807,7 +969,16 @@
         }
 
         function updateHud() {
-             hud.classList.toggle('visible', historyStack.length > 1);
+             const visible = historyStack.length > 0; 
+             hud.classList.toggle('visible', visible);
+             
+             if (historyStack.length <= 1) {
+                 backBtn.style.display = 'none';
+                 restartBtn.style.display = 'block';
+             } else {
+                 backBtn.style.display = 'flex';
+                 restartBtn.style.display = 'none';
+             }
         }
 
     </script>
